@@ -26,11 +26,10 @@ module.exports = {
       },
       firstName:{
         type: Sequelize.STRING,
-        allowNull: false
+        
       },
-      lastname:{
+      lastName:{
         type: Sequelize.STRING,
-        allowNull: false
       },
       hashedPassword: {
         type: Sequelize.STRING.BINARY,
