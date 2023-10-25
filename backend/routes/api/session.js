@@ -23,6 +23,8 @@ router.post(
         where: {
           [Op.or]: {
             username: credential,
+            firstName: credential,
+            lastName: credential,
             email: credential
           }
         }
@@ -38,8 +40,10 @@ router.post(
   
       const safeUser = {
         id: user.id,
-        email: user.email,
         username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
       };
   
       await setTokenCookie(res, safeUser);
@@ -73,42 +77,46 @@ router.delete(
     handleValidationErrors
   ];
 
-  // Log in
-router.post(
-    '/',
-    validateLogin,
-    async (req, res, next) => {
-      const { credential, password } = req.body;
+//   // Log in
+// router.post(
+//     '/',
+//     validateLogin,
+//     async (req, res, next) => {
+//       const { credential, password} = req.body;
   
-      const user = await User.unscoped().findOne({
-        where: {
-          [Op.or]: {
-            username: credential,
-            email: credential
-          }
-        }
-      });
+//       const user = await User.unscoped().findOne({
+//         where: {
+//           [Op.or]: {
+//             username: credential,
+//             email: credential,
+//             lastName: credential,
+//             firstName: credential
+//           }
+//         }
+//       });
   
-      if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
-        const err = new Error('Login failed');
-        err.status = 401;
-        err.title = 'Login failed';
-        err.errors = { credential: 'The provided credentials were invalid.' };
-        return next(err);
-      }
+//       if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
+//         const err = new Error('Login failed');
+//         err.status = 401;
+//         err.title = 'Login failed';
+//         err.errors = { credential: 'The provided credentials were invalid.' };
+//         return next(err);
+//       }
   
-      const safeUser = {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-      };
+//       const safeUser = {
+//         id: user.id,
+//         email: user.email,
+//         username: user.username,
+//         lastName: user.lastName,
+//         firstName: user.firstName
+//       };
   
-      await setTokenCookie(res, safeUser);
+//       await setTokenCookie(res, safeUser);
   
-      return res.json({
-        user: safeUser
-      });
-    }
-  );
+//       return res.json({
+//         user: safeUser
+//       });
+//     }
+//   );
 
 module.exports = router;
