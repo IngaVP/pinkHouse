@@ -29,15 +29,27 @@ router.post(
           }
         }
       });
-  
+
+      if(credential === ""){
+        const error = new Error("Email or username is required")
+        error.status = 400;
+        return next(error)
+      };
+
+      if(password === ""){
+        const error = new Error("Password is required")
+        error.status = 400;
+        return next(error)
+      };
+      
       if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
         const err = new Error('Login failed');
         err.status = 401;
         err.title = 'Login failed';
         err.errors = { credential: 'The provided credentials were invalid.' };
         return next(err);
-      }
-  
+      };
+
       const safeUser = {
         id: user.id,
         username: user.username,
@@ -65,6 +77,24 @@ router.delete(
     }
   );
 
+  router.get(
+    '/',
+    (req, res) => {
+      const { user } = req;
+      if (user) {
+        const safeUser = {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName
+        };
+        return res.json({
+          user: safeUser
+        });
+      } else return res.json({ user: null });
+    }
+  );
 
   const validateLogin = [
     check('credential')

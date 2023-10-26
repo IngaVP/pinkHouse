@@ -22,15 +22,24 @@ module.exports = {
       email: {
         type: Sequelize.STRING(256),
         allowNull: false,
-        unique: true
+        unique: true, 
+        validate:{
+          notEmpty: true
+        }
       },
       firstName:{
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        validate:{
+          notEmpty: true
+        }
       },
       lastName:{
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        validate:{
+          notEmpty: true
+        }
       },
       hashedPassword: {
         type: Sequelize.STRING.BINARY,
