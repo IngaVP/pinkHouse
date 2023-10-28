@@ -38,6 +38,25 @@ router.post('/:spotId/images', requireAuth, async (req, res) => {
    } 
  });
 
+router.get("/:spotId", 
+async (req, res) =>{
+   const { spotId } = req.params
+   const spotById = await Spot.findOne({
+      where: {
+        id: spotId
+      }
+    });
+    return res.json(
+      spotById
+    );
+})
+//edit a spot
+router.put("/:spotId",
+async (req, res) =>{
+   const { spot } = req.body
+
+
+})
 //get all spots owned by the current user
 router.get("/current",
 async (req,res) =>{
