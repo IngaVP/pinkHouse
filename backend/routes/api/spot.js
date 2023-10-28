@@ -53,9 +53,25 @@ async (req, res) =>{
 //edit a spot
 router.put("/:spotId",
 async (req, res) =>{
-   const { spot } = req.body
+   const { address,city,state,country,lat,lng,name,description,price} = req.body
+   const { spotId } = req.params
+   const spotToChange = await Spot.findOne({  
+      where: {
+      id: spotId
+    }
+   });
+   spotToChange.address = address
+   spotToChange.city = city
+   spotToChange.country = country
+   spotToChange.lat = lat
+   spotToChange.lng = lng
+   spotToChange.name = name
+   spotToChange.description = description
+   spotToChange.price = price
 
-
+   return res.json(
+      spotToChange
+   )
 })
 //get all spots owned by the current user
 router.get("/current",
