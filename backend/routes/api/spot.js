@@ -73,6 +73,26 @@ async (req, res) =>{
       spotToChange
    )
 })
+
+//delete a spot
+
+router.delete("/:spotId", 
+async (req,res) =>{
+   //const { spotId } = req.params.spotId
+
+   const spotToDelete = await Spot.findByPk(req.params.spotId);
+
+   await spotToDelete.destroy()
+
+   return res.json(
+      {
+         "message": "Successfully deleted"
+       }
+   )
+
+}
+)
+
 //get all spots owned by the current user
 router.get("/current",
 async (req,res) =>{
