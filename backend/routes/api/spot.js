@@ -7,6 +7,8 @@ const { Spot } = require('../../db/models');
 
 const { SpotImage } = require('../../db/models')
 
+const { Review } = require('../../db/models')
+
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
@@ -131,6 +133,18 @@ router.post("/", async (req,res) =>{
    });
 
     return res.json(newSpot)
+})
+
+// create a review for a spot based on the spot id
+router.post("/:spotId/reviews", 
+async (req, res) => {
+    const {review, stars} = req.body
+
+    const spotById = await Spot.findByPk(req.params.spotId)
+
+      let newReview = await Review.create({review, stars})
+
+      return res.json(newReview)
 })
 
 module.exports = router
