@@ -5,21 +5,30 @@ const bcrypt = require('bcryptjs');
 const { setTokenCookie, requireAuth } = require('../../utils/auth');
 const { Review } = require('../../db/models');
 const { Spot } = require('../../db/models')
-//const { ReviewImage } = require('../../db/models')
+const { ReviewImage } = require('../../db/models')
 
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
-// // create a review for a spot based on the spot id
-// router.post("/:spotId/reviews", 
-// async (req, res) => {
-//     const {review, stars} = req.body
 
-//     const spotById = await Spot.findByPk(req.params.spotId)
+//add an image to a review based on the Reviews Id
+router.post("/:reviewId/images", 
+async (req,res) =>{
+    const { reviewId } = req.params
+    const { url } = req.body
+    const thisReview = await Review.findOne({
+        where: {
+            id: reviewId
+        }
+    })
 
-//       let newReview = await Review.create({review, stars})
+    const newImage = await ReviewImage.create({ reviewId, url})
 
-//       return res.json(newReview)
-// })
+    return res.json(
+        newImage
+    )
+})
+
+
 
 module.exports = router
