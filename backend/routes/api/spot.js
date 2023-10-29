@@ -9,9 +9,45 @@ const { SpotImage } = require('../../db/models')
 
 const { Review } = require('../../db/models')
 
+const { ReviewImage } = require('../../db/models')
+
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
+
+// router.get("/:spotId/reviews", 
+// async (req,res) =>{
+//     const { spotId } = req.params
+
+//     const allOfaSpotsReviews = await Spot.findAll({    
+//         where: {
+//         id: spotId
+//         },
+//         include: Review
+//     })
+//         return res.json({Review})
+
+
+// })
+
+//get all reviews by a spot Id
+
+router.get("/:spotId/reviews", 
+async (req,res) =>{
+    const { spotId } = req.params
+    
+    const where = {}
+
+    where.spotId = spotId
+
+    const allOfaSpotsReviews = await Review.findAll({    
+        // where: {
+        // id: spotId
+        // },
+     include: [{model: ReviewImage}]
+    });
+    return res.json(allOfaSpotsReviews)
+})
 //add an image to a spot based on spot id
 router.post('/:spotId/images', requireAuth, async (req, res) => {
    //grab spot id from params, and get url and preview from body
@@ -98,18 +134,18 @@ async (req,res) =>{
 //get all spots owned by the current user
 router.get("/current",
 async (req,res) =>{
-   const { spot } = req;
-   if (spot) {
+   const { spots } = req;
+   if (spots) {
      const userSpots = {
-      address: spot.address,
-      city: spot.city,
-      state: spot.state,
-      country: spot.country,
-      lat: spot.lat,
-      lng: spot.lng,
-      name: spot.name,
-      description: spot.description,
-      price: spot.price
+      address: spots.address,
+      city: spots.city,
+      state: spots.state,
+      country: spots.country,
+      lat: spots.lat,
+      lng: spots.lng,
+      name: spots.name,
+      description: spots.description,
+      price: spots.price
      };
      return res.json({
        spot: userSpots

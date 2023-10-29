@@ -6,6 +6,7 @@ const { setTokenCookie, requireAuth } = require('../../utils/auth');
 const { Review } = require('../../db/models');
 const { Spot } = require('../../db/models')
 const { ReviewImage } = require('../../db/models')
+const { User } = require("../../db/models")
 
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
@@ -19,16 +20,93 @@ async (req,res) =>{
     const thisReview = await Review.findOne({
         where: {
             id: reviewId
-        }
+        },
+        // attributes: { exclude: ['createdAt', 'updatedAt'] },
     })
 
     const newImage = await ReviewImage.create({ reviewId, url})
 
-    return res.json(
-        newImage
-    )
-})
+    const safeNewReviewImage = {
+        id: newImage.id,
+        url: newImage.url
+    }
+res.status(200).json(safeNewReviewImage);
 
+})
+//get all reviews written by current user
+router.get("/current", requireAuth,
+async (req,res) => {
+    const { user } = req
+    const currentUserId = user.id
+
+    const where = {}
+
+    where.userId = user.id
+
+    let currentUsersReviews = await Review.findAll(
+        // {where: {
+        //     userId: currentUserId
+        // }, 
+    {
+       include: [
+          {model: User, attributes: ["id","firstName","lastName"]},
+         {model: Spot, attributes:  ["id","ownerId","address","city","state", "country","lat","lng","name","price"] },
+            {model: ReviewImage, attributes: ["id", "url"]}
+     ]
+    });
+    if (currentUsersReviews){
+    return res.json(currentUsersReviews)
+    }
+});
+
+
+
+//edit a review
+router.put("/:reviewId", requireAuth,
+async (req,res)=>{
+    const { reviewId } = req.params
+
+    const { user } = req
+    const {review, stars} = req.body
+    
+    const where = {}
+
+    where.userId = user.id
+
+    const reviewToChange = await Review.findOne({
+        where: {
+            id: reviewId
+        }
+    });
+    reviewToChange.update({
+        review: review,
+        stars: stars
+    })
+    await reviewToChange.save()
+
+    return res.json(reviewToChange)
+}
+)
+//delete a review
+router.delete("/:reviewId", requireAuth,
+async (req,res)=>{
+    const {reviewId} = req.params
+    const { user } = req
+    
+    const where = {}
+
+    where.userId = user.id
+
+    const doomedReview = await Review.findOne({where:{
+        id: reviewId
+    }})
+
+    await doomedReview.destroy()
+
+    return res.json({
+        "message": "Successfully deleted"
+      })
+})
 
 
 module.exports = router
