@@ -27,15 +27,16 @@ const validateLogin = [
 // Log in
 router.post(
     '/',
+    validateLogin,
     async (req, res, next) => {
       const { credential, password } = req.body;
-      validateLogin
+      //validateLogin
       const user = await User.unscoped().findOne({
         where: {
           [Op.or]: {
             username: credential,
-            firstName: credential,
-            lastName: credential,
+            // firstName: credential,
+            // lastName: credential,
             email: credential
           }
         }
@@ -87,7 +88,7 @@ router.delete(
       return res.json({ message: 'success' });
     }
   );
-
+//get current user
   router.get(
     '/',
     (req, res) => {

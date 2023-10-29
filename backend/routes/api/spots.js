@@ -11,24 +11,47 @@ const { Review } = require('../../db/models')
 
 const { ReviewImage } = require('../../db/models')
 
+const { Booking } = require('../../db/models')
+
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
 
-// router.get("/:spotId/reviews", 
-// async (req,res) =>{
-//     const { spotId } = req.params
+//get all bookings for a Spot based on the spots id
 
-//     const allOfaSpotsReviews = await Spot.findAll({    
-//         where: {
-//         id: spotId
-//         },
-//         include: Review
-//     })
-//         return res.json({Review})
+router.get("/:spotId/bookings", requireAuth, 
+async (req, res) =>{
+  const {spotId} = req.params
+
+  const alltheBookings = await Booking.findAll({where:{
+    spotId: spotId
+  }})
+
+  return(res.json(alltheBookings))
+}
+)
 
 
-// })
+//create a booking from a spot based on the spot Id
+
+router.post("/:spotId/bookings", requireAuth,
+async (req,res)=>{
+
+  const { spotId } = req.params;
+  const { user } = req
+
+  let thisSpot = await Spot.findByPk(spotId)
+
+ let newBooking =  await Booking.create({
+    spotId: spotId,
+    userId: user.id,
+    startDate: req.body.startDate,
+    endDate: req.body.endDate
+  })
+//console.log
+  return res.json(newBooking)
+})
+
 
 //get all reviews by a spot Id
 
@@ -131,28 +154,30 @@ async (req,res) =>{
 }
 )
 
+
+
 //get all spots owned by the current user
-router.get("/current",
+router.get("/current", requireAuth,
 async (req,res) =>{
-   const { spots } = req;
-   if (spots) {
-     const userSpots = {
-      address: spots.address,
-      city: spots.city,
-      state: spots.state,
-      country: spots.country,
-      lat: spots.lat,
-      lng: spots.lng,
-      name: spots.name,
-      description: spots.description,
-      price: spots.price
-     };
-     return res.json({
-       spot: userSpots
-     });
-   } else return res.json({ spot: null });
+
+  const { user } = req
+
+ // const where = {}
+
+ // where.ownerId = user.id
+
+  const Spots = await Spot.findAll(
+    {where:{
+      ownerId: user.id
+
+  }});
+
+  return(res.json({Spots}))
+
 }
 )
+
+
 //get all spots
 router.get("/", async (req, res) => {
    const spots = await Spot.findAll();

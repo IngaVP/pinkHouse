@@ -12,6 +12,7 @@ module.exports = {
   async up (queryInterface, Sequelize) {
     await Spot.bulkCreate([
       {
+        ownerId: 1,
         address: "Cherry Boulvard",
         city: "Seattle",
         state: "Washington",
@@ -25,6 +26,7 @@ module.exports = {
         previewImage: "https://www.bankrate.com/2022/09/01120255/Victorian-style-homes.jpg?auto=webp&optimize=high&crop=16:9"
       },
 {
+  ownerId: 2,
       address: "Orange Boulvard",
       city: "Seattle",
       state: "Washington",
@@ -38,6 +40,7 @@ module.exports = {
       previewImage: "https://www.bostonmagazine.com/wp-content/uploads/sites/2/2023/06/the-pink-house-3.jpg"
 },
 {
+  ownerId: 3,
   address: "Apple Boulvard",
   city: "Seattle",
   state: "Washington",
