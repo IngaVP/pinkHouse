@@ -16,7 +16,27 @@ const { Booking } = require('../../db/models')
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
-
+const validateSignup = [
+  check('address')
+  //check('city')
+  // check('email')
+  //   .exists({ checkFalsy: true })
+  //   .isEmail()
+  //   .withMessage('Please provide a valid email.'),
+  // check('username')
+  //   .exists({ checkFalsy: true })
+  //   .isLength({ min: 4 })
+  //   .withMessage('Please provide a username with at least 4 characters.'),
+  // check('username')
+  //   .not()
+  //   .isEmail()
+  //   .withMessage('Username cannot be an email.'),
+  // check('password')
+  //   .exists({ checkFalsy: true })
+  //   .isLength({ min: 6 })
+  //   .withMessage('Password must be 6 characters or more.'),
+  // handleValidationErrors
+];
 //get all bookings for a Spot based on the spots id
 
 router.get("/:spotId/bookings", requireAuth, 
@@ -177,6 +197,17 @@ async (req,res) =>{
 }
 )
 
+// create a review for a spot based on the spot id
+router.post("/:spotId/reviews", 
+async (req, res) => {
+    const {review, stars} = req.body
+
+    const spotById = await Spot.findByPk(req.params.spotId)
+
+      let newReview = await Review.create({review, stars})
+
+      return res.json(newReview)
+})
 
 //get all spots
 router.get("/", async (req, res) => {
@@ -184,7 +215,10 @@ router.get("/", async (req, res) => {
   
    return res.json(spots);
   });
-router.post("/", async (req,res) =>{
+
+
+//create a spot
+router.post("/", requireAuth, async (req,res) =>{
 
   const {address,city,state,country,lat,lng,name,description,price} = req.body
 
@@ -196,16 +230,37 @@ router.post("/", async (req,res) =>{
     return res.json(newSpot)
 })
 
-// create a review for a spot based on the spot id
-router.post("/:spotId/reviews", 
-async (req, res) => {
-    const {review, stars} = req.body
 
-    const spotById = await Spot.findByPk(req.params.spotId)
 
-      let newReview = await Review.create({review, stars})
+//add query filters
+router.get("/", 
+async (res,req) =>{
 
-      return res.json(newReview)
+  const  {page, size} = req.query
+
+
+  const where = {};
+	const query = {};
+
+  if(size >= 1 && size <=10){
+    size = 1
+  } else{
+    parseInt(size)
+  };
+
+  if (page >= 1 && page <=20){
+    page = 20
+  } else{
+    parseInt(page)
+  };
+  query.limit = size;
+	query.offset = size * (page - 1);
+
+  let Spots = await Spot.findAll({	where,
+		...query,})
+
+    return res.json({Spots,page,size}
+    );
 })
 
 module.exports = router
