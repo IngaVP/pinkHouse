@@ -1,5 +1,5 @@
 const express = require('express')
-const router = express.Router();
+
 const bcrypt = require('bcryptjs');
 
 const { setTokenCookie, requireAuth } = require('../../utils/auth');
@@ -16,27 +16,81 @@ const { Booking } = require('../../db/models')
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
-const validateSignup = [
+
+const router = express.Router();
+const validateSpotCreation = [
   check('address')
-  //check('city')
-  // check('email')
-  //   .exists({ checkFalsy: true })
-  //   .isEmail()
-  //   .withMessage('Please provide a valid email.'),
-  // check('username')
-  //   .exists({ checkFalsy: true })
-  //   .isLength({ min: 4 })
-  //   .withMessage('Please provide a username with at least 4 characters.'),
-  // check('username')
-  //   .not()
-  //   .isEmail()
-  //   .withMessage('Username cannot be an email.'),
-  // check('password')
-  //   .exists({ checkFalsy: true })
-  //   .isLength({ min: 6 })
-  //   .withMessage('Password must be 6 characters or more.'),
-  // handleValidationErrors
+  .exists({checkFalsey: true}),
+  check('city')
+  .exists({checkFalsey: true}),
+  check("state")
+  .exists({checkFalsey: true}),
+  check("country")
+  .exists({checkFalsey: true}),
+  check("name")
+  .isLength({max: 50}),
+  check("description") 
+  .exists({checkFalsey: true}),
+  check("price")
+  .isInt({ min: 0}),
+  handleValidationErrors
 ];
+
+
+
+const validateSpotImage = [
+  check("url")
+  .exists({checkFalsey: true}),
+  check("preview")
+  .exists({checkFalsey: true}),
+  handleValidationErrors
+]
+
+const validateReviews = [
+  check("review")
+  .exists({checkFalsey: true}),
+  check("stars")
+  .isInt({min: 0}),
+  handleValidationErrors
+]
+
+//add an image to a spot based on spot id
+router.post('/:spotId/images', requireAuth, async (req, res) => {
+  //grab spot id from params, and get url and preview from body
+  const spotId = req.params.spotId;
+  const { url, preview } = req.body;
+  const { user } = req
+//get instance that matches the id provided from the DB
+  const spot = await Spot.findOne({
+    where: {
+      id: spotId
+    }
+  });
+
+  if(!spot){
+    res.status(404)
+     throw new Error(
+        "Spot couldn't be found"
+     );
+   };
+
+if (spot.ownerId !== user.id){
+    res.status(403)
+    throw new Error(
+      "Forbidden"
+      )
+     };
+
+     
+    const image = await SpotImage.create({spotId, url, preview});
+    const {id} = image;
+  return res.json({
+    id,
+    url,
+    preview
+  })
+  
+});
 //get all bookings for a Spot based on the spots id
 
 router.get("/:spotId/bookings", requireAuth, 
@@ -51,6 +105,62 @@ async (req, res) =>{
 }
 )
 
+//get all spots owned by the current user
+router.get("/current", requireAuth,
+async (req,res) =>{
+
+ const { user } = req
+
+
+  const Spots = await Spot.findAll(
+    {where:{
+      ownerId: user.id
+
+  }});
+// const id = req.user.id
+// //const id = req.user.id;
+//     console.log("Current User ID:", id);
+//     //find spots where ownerId = current user, also include associated model review and spotimage.
+//     const spots = await Spot.findAll({
+//         include: [{model: Review}, {model:SpotImage}],
+//         where: { ownerId: id}
+//     })
+
+  return(res.json({Spots}))
+
+}
+)
+// create a review for a spot based on the spot id
+router.post("/:spotId/reviews", requireAuth, validateReviews,
+async (req, res) => {
+    const { review, stars } = req.body
+
+    const { user } = req
+
+    const { spotId } = req.params
+
+    const parsedspotId = parseInt(spotId)
+
+    const spotById = await Spot.findByPk(parsedspotId)
+
+    if (!spotById){
+      res.status(404);
+      throw new Error("Spot couldn't be found")
+    }
+
+    const previousReviewChecker = await Review.findOne({
+      where:{userId: user.id, spotId: parsedspotId}
+    })
+
+    if(previousReviewChecker){
+      res.status(500)
+      throw new Error("User already has a review for this spot")
+    }
+      let newReview = await Review.create({userId: user.id, spotId: parsedspotId, review,
+        stars})
+
+      return res.json(newReview)
+})
 
 //create a booking from a spot based on the spot Id
 
@@ -91,33 +201,7 @@ async (req,res) =>{
     });
     return res.json(allOfaSpotsReviews)
 })
-//add an image to a spot based on spot id
-router.post('/:spotId/images', requireAuth, async (req, res) => {
-   //grab spot id from params, and get url and preview from body
-   const spotId = req.params.spotId;
-   const {url, preview} = req.body;
- //get instance that matches the id provided from the DB
-   const spotIdFromDb = await Spot.findOne({
-     where: {
-       id: spotId
-     }
-   });
-   //if that instance exists
-   if(spotIdFromDb){
-      //create a new image
-     const image = await SpotImage.create({spotId, url, preview});
-     const {id} = image;
-   return res.json({
-     id,
-     url,
-     preview
-   })
-   }else{
-     throw new Error({
-       "message": "Spot couldn't be found"
-     });
-   } 
- });
+
 
 router.get("/:spotId", 
 async (req, res) =>{
@@ -132,37 +216,76 @@ async (req, res) =>{
     );
 })
 //edit a spot
-router.put("/:spotId",
+router.put("/:spotId", requireAuth, validateSpotCreation,
 async (req, res) =>{
    const { address,city,state,country,lat,lng,name,description,price} = req.body
+   const { user } = req
    const { spotId } = req.params
+
    const spotToChange = await Spot.findOne({  
       where: {
       id: spotId
     }
    });
-   spotToChange.address = address
-   spotToChange.city = city
-   spotToChange.country = country
-   spotToChange.lat = lat
-   spotToChange.lng = lng
-   spotToChange.name = name
-   spotToChange.description = description
-   spotToChange.price = price
+   if(!spotToChange){
+    res.status(404)
+    return res.json({
+      "message": "Spot couldn't be found"
+    })
+   }
+   
+   spotToChange.update({
+   address: address,
+   city: city,
+   state: state,
+   country: country,
+   lat: lat,
+   lng: lng,
+   name: name,
+   description: description,
+   price: price,
+   })
 
+await spotToChange.save()
+
+if(user.id === spotToChange.ownerId){
    return res.json(
       spotToChange
    )
+} else{
+  const err = new Error('User does not have correct role or permission');
+  err.title = 'Permissions';
+  err.errors = { message: 'Forbidden' };
+  err.status = 403;
+  return res.json(err)
+};
 })
 
 //delete a spot
 
-router.delete("/:spotId", 
+router.delete("/:spotId", requireAuth,
 async (req,res) =>{
    //const { spotId } = req.params.spotId
 
-   const spotToDelete = await Spot.findByPk(req.params.spotId);
+   const { user } = req
 
+   const { spotId } = req.params
+
+   let spotIdParsed = parseInt(spotId)
+
+   const spotToDelete = await Spot.findByPk(spotIdParsed);
+
+   if(!spotToDelete){
+    res.status(404)
+    throw new Error(
+      "Spot couldn't be found"
+    )
+   }
+
+   if (user.id !== spotToDelete.ownerId){
+    res.status(403)
+    throw new Error("forbidden")
+   }
    await spotToDelete.destroy()
 
    return res.json(
@@ -173,42 +296,6 @@ async (req,res) =>{
 
 }
 )
-
-
-
-//get all spots owned by the current user
-router.get("/current", requireAuth,
-async (req,res) =>{
-
-  const { user } = req
-
- // const where = {}
-
- // where.ownerId = user.id
-
-  const Spots = await Spot.findAll(
-    {where:{
-      ownerId: user.id
-
-  }});
-
-  return(res.json({Spots}))
-
-}
-)
-
-// create a review for a spot based on the spot id
-router.post("/:spotId/reviews", 
-async (req, res) => {
-    const {review, stars} = req.body
-
-    const spotById = await Spot.findByPk(req.params.spotId)
-
-      let newReview = await Review.create({review, stars})
-
-      return res.json(newReview)
-})
-
 //get all spots
 router.get("/", async (req, res) => {
    const spots = await Spot.findAll();
@@ -218,7 +305,7 @@ router.get("/", async (req, res) => {
 
 
 //create a spot
-router.post("/", requireAuth, async (req,res) =>{
+router.post("/", validateSpotCreation, requireAuth, async (req,res) =>{
 
   const {address,city,state,country,lat,lng,name,description,price} = req.body
 

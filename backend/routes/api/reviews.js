@@ -37,7 +37,7 @@ res.status(200).json(safeNewReviewImage);
 router.get("/current", requireAuth,
 async (req,res) => {
     const { user } = req
-    const currentUserId = user.id
+    //const currentUserId = user.id
 
     const where = {}
 
@@ -54,9 +54,19 @@ async (req,res) => {
             {model: ReviewImage, attributes: ["id", "url"]}
      ]
     });
-    if (currentUsersReviews){
-    return res.json(currentUsersReviews)
+
+    if(!currentUsersReviews){
+        res.status(404)
+        throw new Error("Spot couldn't be found")
     }
+
+    if(currentUsersReviews.userId !== user.id){
+        res.status(403)
+        throw new Error("Forbidden")
+    }
+    
+    return res.json(currentUsersReviews)
+    
 });
 
 
