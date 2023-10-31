@@ -68,4 +68,13 @@ const requireAuth = function (req, _res, next) {
     return next(err);
   }
 
+  // //all endpoints that require proper authentization
+
+  // const authenticator = function (req, _res, next){
+  //       let {user} = user.req
+
+  //       let authorizedUser = await 
+  // }
+
+
   module.exports = { setTokenCookie, restoreUser, requireAuth };
