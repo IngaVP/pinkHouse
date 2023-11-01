@@ -54,13 +54,27 @@ router.delete("/:bookingId", requireAuth,
 async (req,res) =>{
     const { bookingId } = req.params
 
-    const doomedBooking = await Booking.findByPk(bookingId)
+    const { user } = req
+
+    const doomedBooking = await Booking.findOne({where:{id: bookingId}, include: [{model: User}]})
+
+    if(!doomedBooking){
+        res.status(404)
+        throw new Error("Booking couldn't be found")
+    }
+
+    //Booking must belong to the current user or the Spot must belong to the current user
+    if (doomedBooking.userId === user.id || doomedBooking.User.id === doomedBooking.ownerId){
 
     await doomedBooking.destroy()
 
     return res.json({
         "message": "Successfully deleted"
       })
+    } else{
+        res.status(403)
+        throw new Error ("Forbidden")
+    }
 })
 
 module.exports = router
