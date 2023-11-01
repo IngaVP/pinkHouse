@@ -29,12 +29,6 @@ module.exports = {
       },
       firstName:{
         type: Sequelize.STRING,
-<<<<<<< HEAD
-        
-      },
-      lastName:{
-        type: Sequelize.STRING,
-=======
         allowNull: false,
         validate:{
           notEmpty: true
@@ -46,7 +40,6 @@ module.exports = {
         validate:{
           notEmpty: true
         }
->>>>>>> dev
       },
       hashedPassword: {
         type: Sequelize.STRING.BINARY,
