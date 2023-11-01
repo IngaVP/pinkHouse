@@ -22,8 +22,6 @@ module.exports = {
         name: "Big House",
         description: "Large house",
         price: 630.00,
-
-        previewImage: "https://www.bankrate.com/2022/09/01120255/Victorian-style-homes.jpg?auto=webp&optimize=high&crop=16:9"
       },
 {
   ownerId: 2,
