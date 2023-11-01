@@ -282,6 +282,7 @@ async (req, res) =>{
       id: spotId
     }
    });
+
    if(!spotToChange){
     res.status(404)
     return res.json({
@@ -303,17 +304,14 @@ async (req, res) =>{
 
 await spotToChange.save()
 
-if(user.id === spotToChange.ownerId){
+if(user.id !== spotToChange.ownerId){
+  res.status(403)
+  throw new Error("Forbidden")
+}
    return res.json(
       spotToChange
    )
-} else{
-  const err = new Error('User does not have correct role or permission');
-  err.title = 'Permissions';
-  err.errors = { message: 'Forbidden' };
-  err.status = 403;
-  return res.json(err)
-};
+
 })
 
 //delete a spot
