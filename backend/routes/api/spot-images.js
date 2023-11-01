@@ -17,12 +17,13 @@ router.delete("/:imageId", requireAuth,
 async (req,res) =>{
     const { user } = req
 
+    //find spot that belongs to user
     let spot = await Spot.findOne({where:{ownerId: user.id}}, {include:[{model:SpotImage}]})
-
+// return res.json(spot)
     let spotId = spot.id
-    
+ //   find image on spot that belongs to user
     let doomedImage = await SpotImage.findOne({where:{
-        spotId: spotId
+        spotId: spot.id
     }})
 
     await doomedImage.destroy()

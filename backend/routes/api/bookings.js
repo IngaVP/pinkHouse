@@ -12,6 +12,21 @@ const { Booking } = require("../../db/models")
 const { check } = require('express-validator');
 //const { handleValidationErrors } = require('../../utils/validation');
 
+
+//ge all of the current users bookings
+router.get("/current", requireAuth,
+async (req,res) =>{
+    const { user } = req
+
+    const currentBookings = await Booking.findAll({where:{
+        userId: user.id
+    }, include : [{model: Spot}]});
+
+    res.json(currentBookings)
+
+})
+
+
 //edit a booking 
 
 router.put("/:bookingId", requireAuth,
@@ -39,13 +54,27 @@ router.delete("/:bookingId", requireAuth,
 async (req,res) =>{
     const { bookingId } = req.params
 
-    const doomedBooking = await Booking.findByPk(bookingId)
+    const { user } = req
+
+    const doomedBooking = await Booking.findOne({where:{id: bookingId}, include: [{model: User}]})
+
+    if(!doomedBooking){
+        res.status(404)
+        throw new Error("Booking couldn't be found")
+    }
+
+    //Booking must belong to the current user or the Spot must belong to the current user
+    if (doomedBooking.userId === user.id || doomedBooking.User.id === doomedBooking.ownerId){
 
     await doomedBooking.destroy()
 
     return res.json({
         "message": "Successfully deleted"
       })
+    } else{
+        res.status(403)
+        throw new Error ("Forbidden")
+    }
 })
 
 module.exports = router
