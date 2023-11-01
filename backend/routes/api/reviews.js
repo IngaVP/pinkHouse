@@ -116,14 +116,21 @@ async (req,res)=>{
     const {reviewId} = req.params
     const { user } = req
     
-    const where = {}
+    // const where = {}
 
-    where.userId = user.id
+    // where.userId = user.id
 
     const doomedReview = await Review.findOne({where:{
         id: reviewId
     }})
-
+    if(!doomedReview){
+        res.status(404)
+        throw new Error("Review couldn't be found")
+    }
+    if(user.id !== doomedReview.userId){
+        res.status(403)
+        throw new Error("Forbidden")
+    }
     await doomedReview.destroy()
 
     return res.json({

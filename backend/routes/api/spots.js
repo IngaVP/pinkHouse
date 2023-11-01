@@ -13,6 +13,8 @@ const { ReviewImage } = require('../../db/models')
 
 const { Booking } = require('../../db/models')
 
+const { User } = require('../../db/models')
+
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
@@ -112,11 +114,26 @@ router.get("/:spotId/bookings", requireAuth,
 async (req, res) =>{
   const {spotId} = req.params
 
-  const alltheBookings = await Booking.findAll({where:{
+  const { user } = req
+
+  const Bookings = await Booking.findAll({where:{
     spotId: spotId
   }})
 
-  return(res.json(alltheBookings))
+  if(!Bookings.length){
+    res.status(404)
+    throw new Error("Spot couldn't be found")
+  }
+
+  if(user.id !== Bookings.UserId){
+    res.json({Bookings})
+
+  } else{ 
+    const Bookings = await Booking.findAll({where:{
+      spotId: spotId
+    }, include: [{model: User}]})
+    res.json(Bookings)
+  }
 }
 )
 
@@ -186,6 +203,28 @@ async (req,res)=>{
   const { user } = req
 
   let thisSpot = await Spot.findByPk(spotId)
+
+  let checkForExistingBooking = await Booking.findOne({
+    where:{
+      startDate: req.body.startDate,
+      endDate: req.body.EndDate
+    }
+  })
+
+  if(checkForExistingBooking){
+    res.status(403)
+    throw new Error("Sorry, this spot is already booked for the specified dates")
+  }
+
+  if(!thisSpot){
+    res.status(404)
+    throw new Error("Spot couldn't be found")
+  }
+
+  if(thisSpot.ownerId === user.id){
+    res.json(403)
+    throw new Error("Forbidden")
+  }
 
  let newBooking =  await Booking.create({
     spotId: spotId,

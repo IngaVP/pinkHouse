@@ -12,6 +12,21 @@ const { Booking } = require("../../db/models")
 const { check } = require('express-validator');
 //const { handleValidationErrors } = require('../../utils/validation');
 
+
+//ge all of the current users bookings
+router.get("/current", requireAuth,
+async (req,res) =>{
+    const { user } = req
+
+    const currentBookings = await Booking.findAll({where:{
+        userId: user.id
+    }, include : [{model: Spot}]});
+
+    res.json(currentBookings)
+
+})
+
+
 //edit a booking 
 
 router.put("/:bookingId", requireAuth,
