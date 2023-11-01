@@ -20,19 +20,32 @@ const { handleValidationErrors } = require('../../utils/validation');
 const router = express.Router();
 const validateSpotCreation = [
   check('address')
-  .exists({checkFalsey: true}),
+  .exists({checkFalsey: true})
+  .withMessage("Street address is required"),
   check('city')
-  .exists({checkFalsey: true}),
+  .exists({checkFalsey: true})
+  .withMessage("City is required"),
   check("state")
-  .exists({checkFalsey: true}),
+  .exists({checkFalsey: true})
+  .withMessage("State is required"),
   check("country")
-  .exists({checkFalsey: true}),
+  .exists({checkFalsey: true})
+  .withMessage("Country is required"),
+  check("lat")
+  .exists({checkFalsey: true})
+  .withMessage("Latitude is not valid"),
+  check("lng")
+  .exists({checkFalsey: true})
+  .withMessage("Longitude is not valid"),
   check("name")
-  .isLength({max: 50}),
+  .isLength({max: 50})
+  .withMessage("Name must be less than 50 characters"),
   check("description") 
-  .exists({checkFalsey: true}),
+  .exists({checkFalsey: true})
+  .withMessage("Description is required"),
   check("price")
-  .isInt({ min: 0}),
+  .isInt({ min: 0})
+  .withMessage("Price per day is required"),
   handleValidationErrors
 ];
 
@@ -48,9 +61,11 @@ const validateSpotImage = [
 
 const validateReviews = [
   check("review")
-  .exists({checkFalsey: true}),
+  .exists({checkFalsey: true})
+  .withMessage("Review text is required"),
   check("stars")
-  .isInt({min: 0}),
+  .isInt({min: 0})
+  .withMessage("Stars must be an integer from 1 to 5"),
   handleValidationErrors
 ]
 
@@ -184,21 +199,22 @@ async (req,res)=>{
 
 
 //get all reviews by a spot Id
-
 router.get("/:spotId/reviews", 
 async (req,res) =>{
     const { spotId } = req.params
     
-    const where = {}
-
-    where.spotId = spotId
-
     const allOfaSpotsReviews = await Review.findAll({    
-        // where: {
-        // id: spotId
-        // },
-     include: [{model: ReviewImage}]
+        where: {
+        spotId: spotId
+        },
+      include: [{model: ReviewImage}]
     });
+
+    if(!allOfaSpotsReviews.length){
+      res.status(404)
+      throw new Error("Spot couldn't be found")
+    }
+    
     return res.json(allOfaSpotsReviews)
 })
 
