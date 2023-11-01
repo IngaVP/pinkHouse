@@ -55,49 +55,23 @@ router.post(
     }
   );
 
-  // Restore session user
-// router.get(
-//     '/',
-//     (req, res) => {
-//       const { user } = req;
-//       if (user) {
-//         const safeUser = {
-//           id: user.id,
-//           email: user.email,
-//           username: user.username,
-//         };
-//         return res.json({
-//           user: safeUser
-//         });
-//       } else return res.json({ user: null });
-//     }
-//   );
+ // Restore session user
+router.get(
+    '/',
+    (req, res) => {
+      const { user } = req;
+      if (user) {
+        const safeUser = {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+        };
+        return res.json({
+          user: safeUser
+        });
+      } else return res.json({ user: null });
+    }
+  );
 
-
-
-//   // Sign up
-// router.post(
-//     '/',
-//     validateSignup,
-//     async (req, res) => {
-//       const { email, password, username, lastName, firstName} = req.body;
-//       const hashedPassword = bcrypt.hashSync(password);
-//       const user = await User.create({ email, username, lastName, firstName, hashedPassword });
-  
-//       const safeUser = {
-//         id: user.id,
-//         email: user.email,
-//         username: user.username,
-//         lastName: user.lastName,
-//         firstName: user.firstName
-//       };
-  
-//       await setTokenCookie(res, safeUser);
-  
-//       return res.json({
-//         user: safeUser
-//       });
-//     }
-//   );
 
 module.exports = router;
