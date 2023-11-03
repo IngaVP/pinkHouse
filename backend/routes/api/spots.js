@@ -51,8 +51,6 @@ const validateSpotCreation = [
   handleValidationErrors
 ];
 
-
-
 const validateSpotImage = [
   check("url")
   .exists({checkFalsey: true}),
@@ -71,7 +69,9 @@ const validateReviews = [
   handleValidationErrors
 ]
 
-
+const validateBookings = [
+  check()
+]
 //add an image to a spot based on spot id
 router.post('/:spotId/images', requireAuth, async (req, res) => {
   
@@ -199,7 +199,7 @@ async (req,res)=>{
   let checkForExistingBooking = await Booking.findOne({
     where:{
       startDate: req.body.startDate,
-      endDate: req.body.EndDate
+      endDate: req.body.endDate
     }
   })
 
@@ -281,6 +281,9 @@ async (req, res) =>{
       "message": "Spot couldn't be found"})
    }
 
+   console.log("user id", user.id)
+   console.log("spotToChange.ownerId", spotToChange.ownerId)
+
    if(user.id !== spotToChange.ownerId){
     const newError = new Error("forbidden")
     newError.status = 403
@@ -360,7 +363,7 @@ router.post("/", requireAuth, validateSpotCreation, async (req,res) =>{
   const { user } = req
 
      const newSpot = await Spot.create({
-       address,city,state,country,lat,lng,name,description,price
+       ownerId: user.id, address,city,state,country,lat,lng,name,description,price
    });
 
 
