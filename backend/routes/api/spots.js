@@ -69,9 +69,6 @@ const validateReviews = [
   handleValidationErrors
 ]
 
-const validateBookings = [
-  check()
-]
 //add an image to a spot based on spot id
 router.post('/:spotId/images', requireAuth, async (req, res) => {
   
@@ -187,26 +184,25 @@ async (req, res) => {
 })
 
 //create a booking from a spot based on the spot Id
-
+const { Op } = require("sequelize");
 router.post("/:spotId/bookings", requireAuth,
 async (req,res)=>{
 
   const { spotId } = req.params;
   const { user } = req
+  const { startDate, endDate } = req.body
 
+  const parsedEnd = Date.parse(endDate)
+  const parsedStart = Date.parse(startDate) 
+
+   if(parsedEnd <= parsedStart){
+    const newError = new Error("Bad Request")
+     newError.status = 400
+     const errorObject = {"endDate": "endDate cannot be on or before startDate"}
+    newError.errors = errorObject
+      throw newError
+   }
   let thisSpot = await Spot.findByPk(spotId)
-
-  let checkForExistingBooking = await Booking.findOne({
-    where:{
-      startDate: req.body.startDate,
-      endDate: req.body.endDate
-    }
-  })
-
-  if(checkForExistingBooking){
-    res.status(403)
-    throw new Error("Sorry, this spot is already booked for the specified dates")
-  }
 
   if(!thisSpot){
     res.status(404)
@@ -214,8 +210,20 @@ async (req,res)=>{
   }
 
   if(thisSpot.ownerId === user.id){
-    res.json(403)
-    throw new Error("Forbidden")
+    const newError = new Error("forbidden")
+    newError.status = 403
+     throw newError
+}
+
+  let checkForExistingBooking = await Booking.findOne({where:{
+    [Op.between]: [parsedEnd, parsedStart], 
+  }})
+
+  console.log("checkForExisting",checkForExistingBooking)
+
+  if(checkForExistingBooking){
+    res.status(403)
+    throw new Error("Sorry, this spot is already booked for the specified dates")
   }
 
  let newBooking =  await Booking.create({
