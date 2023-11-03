@@ -71,41 +71,33 @@ const validateReviews = [
   handleValidationErrors
 ]
 
+
 //add an image to a spot based on spot id
 router.post('/:spotId/images', requireAuth, async (req, res) => {
-  //grab spot id from params, and get url and preview from body
-  const spotId = req.params.spotId;
+  
+  const { spotId } = req.params;
+  const parsedpot = parseInt( spotId )
   const { url, preview } = req.body;
   const { user } = req
-//get instance that matches the id provided from the DB
-  const spot = await Spot.findOne({
-    where: {
-      id: spotId
-    }
-  });
+
+  const spot = await Spot.findByPk(parsedpot);
 
   if(!spot){
     res.status(404)
-     throw new Error(
-        "Spot couldn't be found"
-     );
+     throw new Error("Spot couldn't be found");
    };
 
-if (spot.ownerId !== user.id){
-    res.status(403)
-    throw new Error(
-      "Forbidden"
-      )
-     };
+if (user.id !== spot.ownerId){
+  const newError = new Error("forbidden")
+  newError.status = 403
+   //res.status(403)
+   throw newError
+ };
 
      
     const image = await SpotImage.create({spotId, url, preview});
     const {id} = image;
-  return res.json({
-    id,
-    url,
-    preview
-  })
+  return res.json({image})
   
 });
 //get all bookings for a Spot based on the spots id
@@ -286,9 +278,15 @@ async (req, res) =>{
    if(!spotToChange){
     res.status(404)
     return res.json({
-      "message": "Spot couldn't be found"
-    })
+      "message": "Spot couldn't be found"})
    }
+
+   if(user.id !== spotToChange.ownerId){
+    const newError = new Error("forbidden")
+    newError.status = 403
+     //res.status(403)
+     throw newError
+  }
    
    spotToChange.update({
    address: address,
@@ -304,10 +302,6 @@ async (req, res) =>{
 
 await spotToChange.save()
 
-if(user.id !== spotToChange.ownerId){
-  res.status(403)
-  throw new Error("Forbidden")
-}
    return res.json(
       spotToChange
    )
@@ -336,8 +330,10 @@ async (req,res) =>{
    }
 
    if (user.id !== spotToDelete.ownerId){
-    res.status(403)
-    throw new Error("forbidden")
+    const newError = new Error("forbidden")
+    newError.status = 403
+     //res.status(403)
+     throw newError
    }
    await spotToDelete.destroy()
 
@@ -358,14 +354,15 @@ router.get("/", async (req, res) => {
 
 
 //create a spot
-router.post("/", validateSpotCreation, requireAuth, async (req,res) =>{
+router.post("/", requireAuth, validateSpotCreation, async (req,res) =>{
 
   const {address,city,state,country,lat,lng,name,description,price} = req.body
-
+  const { user } = req
 
      const newSpot = await Spot.create({
        address,city,state,country,lat,lng,name,description,price
    });
+
 
     return res.json(newSpot)
 })

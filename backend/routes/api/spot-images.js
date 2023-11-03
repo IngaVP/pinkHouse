@@ -19,13 +19,16 @@ async (req,res) =>{
 
     //find spot that belongs to user
     let spot = await Spot.findOne({where:{ownerId: user.id}}, {include:[{model:SpotImage}]})
-// return res.json(spot)
-    let spotId = spot.id
+  if(Spot.OwnerId !== user.id){  
+    const newError = new Error("forbidden")
+    newError.status = 403
+ //res.status(403)
+ throw newError}
+    //let spotId = spot.id
  //   find image on spot that belongs to user
     let doomedImage = await SpotImage.findOne({where:{
         spotId: spot.id
     }})
-
     await doomedImage.destroy()
 
     return res.json({

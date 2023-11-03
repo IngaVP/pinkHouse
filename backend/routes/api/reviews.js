@@ -22,17 +22,24 @@ const validateReviews = [
   ]
 
 //add an image to a review based on the Reviews Id
-router.post("/:reviewId/images", 
+router.post("/:reviewId/images",requireAuth, 
 async (req,res) =>{
     const { reviewId } = req.params
     const { url } = req.body
+    const { user } = req
+    
     const thisReview = await Review.findOne({
         where: {
             id: reviewId
         },
         // attributes: { exclude: ['createdAt', 'updatedAt'] },
     })
-
+if(thisReview.userId !== user.id){  
+     const newError = new Error("forbidden")
+newError.status = 403
+ //res.status(403)
+ throw newError}
+    
     const newImage = await ReviewImage.create({ reviewId, url})
 
     const safeNewReviewImage = {
