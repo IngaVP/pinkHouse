@@ -18,6 +18,11 @@ const { User } = require('../../db/models')
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
 
+if (process.env.NODE_ENV === 'production') {
+	options.schema = process.env.SCHEMA;
+}
+const { Op } = require("sequelize")
+
 
 const router = express.Router();
 const validateSpotCreation = [
@@ -184,7 +189,7 @@ async (req, res) => {
 })
 
 //create a booking from a spot based on the spot Id
-const { Op } = require("sequelize");
+//const { Op } = require("sequelize");
 router.post("/:spotId/bookings", requireAuth,
 async (req,res)=>{
 
@@ -215,15 +220,21 @@ async (req,res)=>{
      throw newError
 }
 
-  let checkForExistingBooking = await Booking.findOne({where:{
-    [Op.between]: [parsedEnd, parsedStart], 
-  }})
+  let checkForExistingBooking = await Booking.findOne(
+    {where: {endDate: {[Op.between]: [endDate, startDate]}}, spotId: spotId})
 
-  console.log("checkForExisting",checkForExistingBooking)
+  let checkForExistingBooking2 = await Booking.findOne(
+      {where: {endDate: {[Op.between]: [endDate, startDate]}}, spotId: spotId})
 
-  if(checkForExistingBooking){
-    res.status(403)
-    throw new Error("Sorry, this spot is already booked for the specified dates")
+  //console.log(checkForExistingBooking)
+
+  if(endDate === (checkForExistingBooking.endDate || checkForExistingBooking.startDate)){
+    const newError = new Error("Sorry, this spot is already booked for the specified dates")
+    newError.status = 403
+    newError.errors = {
+      "endDate": "End date conflicts with an existing booking"
+    }
+     throw newError
   }
 
  let newBooking =  await Booking.create({
@@ -261,11 +272,17 @@ async (req,res) =>{
 router.get("/:spotId", 
 async (req, res) =>{
    const { spotId } = req.params
+
    const spotById = await Spot.findOne({
       where: {
         id: spotId
-      }
+      }, include: [{model:SpotImage}, {model:User}]
     });
+
+    if(!spotById){
+      res.status(404)
+      throw new Error("Spot couldn't be found")
+    }
     return res.json(
       spotById
     );

@@ -34,6 +34,11 @@ async (req,res) =>{
         },
         include: [{model: ReviewImage}],
     })
+    if(user.id !== thisReview.userId){
+        const newError = new Error("forbidden")
+        newError.status = 403
+         throw newError
+    }
     
     if(!thisReview){
         res.status(404)
@@ -115,8 +120,9 @@ async (req,res)=>{
     }
 
     if(reviewToChange.userId !== user.id){
-        res.status(400)
-        throw new Error("Forbidden")
+        const newError = new Error("forbidden")
+        newError.status = 403
+         throw newError
     }
     reviewToChange.update({
         review: review,

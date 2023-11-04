@@ -12,11 +12,13 @@ const { SpotImage } = require("../../db/models")
 
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
-
+//delete a review image
 router.delete("/:imageId", requireAuth, 
 
 async (req, res) =>{
     const { user } = req
+    const {imageId} = req.params
+    const parsedImg = parseInt(imageId)
 
     const reviews = await Review.findOne({
         where: {
@@ -24,12 +26,23 @@ async (req, res) =>{
         }
     });
 
-    const reviewId = reviews.reviewId
+    if (!reviews){
+        const newError = new Error("forbidden")
+        newError.status = 403
+         throw newError
+    }
+
     const doomedImage = await ReviewImage.findOne({where:{
-        reviewId: reviewId
+        id: parsedImg
     }});
 
-    await doomedImage.destroy()
+    if(!doomedImage){
+        const newError = new Error("Review Image couldn't be found")
+        newError.status = 404
+         throw newError
+    }
+
+     await doomedImage.destroy()
 
     return res.json({
         "message": "Successfully deleted"
