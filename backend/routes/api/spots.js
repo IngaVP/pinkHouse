@@ -22,6 +22,7 @@ if (process.env.NODE_ENV === 'production') {
 	options.schema = process.env.SCHEMA;
 }
 const { Op } = require("sequelize")
+const sequelize = require("sequelize")
 
 
 const router = express.Router();
@@ -85,8 +86,9 @@ router.post('/:spotId/images', requireAuth, async (req, res) => {
   const spot = await Spot.findByPk(parsedpot);
 
   if(!spot){
-    res.status(404)
-     throw new Error("Spot couldn't be found");
+     const newError = new Error("Spot couldn't be found")
+     newError.status = 404
+      throw newError
    };
 
 if (user.id !== spot.ownerId){
@@ -196,9 +198,12 @@ async (req,res)=>{
   const { spotId } = req.params;
   const { user } = req
   const { startDate, endDate } = req.body
-
   const parsedEnd = Date.parse(endDate)
+
   const parsedStart = Date.parse(startDate) 
+
+  let start = new Date(startDate)
+  let end = new Date(endDate)
 
    if(parsedEnd <= parsedStart){
     const newError = new Error("Bad Request")
@@ -219,16 +224,18 @@ async (req,res)=>{
     newError.status = 403
      throw newError
 }
-
   let checkForExistingBooking = await Booking.findOne(
-    {where: {endDate: {[Op.between]: [endDate, startDate]}}, spotId: spotId})
+    {where: {endDate:({[Op.between]: [start, end]})}})
 
-  let checkForExistingBooking2 = await Booking.findOne(
-      {where: {endDate: {[Op.between]: [endDate, startDate]}}, spotId: spotId})
+    let checkForExistingBooking2 = await Booking.findOne(
+      {where: {endDate:({[Op.between]: [start, end]})}})
 
-  //console.log(checkForExistingBooking)
+if(checkForExistingBooking){
+  console.log(checkForExistingBooking.endDate)
+  let existingEndDate = new Date (checkForExistingBooking.endDate)
 
-  if(endDate === (checkForExistingBooking.endDate || checkForExistingBooking.startDate)){
+  console.log("existingEndDate", parseInt(existingEndDate))
+  if(endDate == (checkForExistingBooking.endDate || checkForExistingBooking)){
     const newError = new Error("Sorry, this spot is already booked for the specified dates")
     newError.status = 403
     newError.errors = {
@@ -236,16 +243,24 @@ async (req,res)=>{
     }
      throw newError
   }
+  // if(startDate == (checkForExistingBooking2.endDate || checkForExistingBooking2.startDate)){
+  //   const newError = new Error("Sorry, this spot is already booked for the specified dates")
+  //   newError.status = 403
+  //   newError.errors = {
+  //     "startDate": "Start date conflicts with an existing booking"
+  //   }
+  //    throw newError
+  // }
+}
 
  let newBooking =  await Booking.create({
     spotId: spotId,
     userId: user.id,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate
+    startDate: startDate,
+    endDate: endDate
   })
-//console.log
   return res.json(newBooking)
-})
+ })
 
 
 //get all reviews by a spot Id
@@ -375,10 +390,18 @@ async (req,res) =>{
 )
 //get all spots
 router.get("/", async (req, res) => {
-   const spots = await Spot.findAll();
-  
-   return res.json(spots);
-  });
+
+   //const Spots = await Spot.findAll()
+
+const Spots = Spot.findAll({
+  attributes: {
+    include: [ {model:Review},
+      [sequelize.fn('AVG', sequelize.col('stars')), 'avgRating']
+    ]
+  }
+})
+return res.json({Spots})
+})
 
 
 //create a spot
