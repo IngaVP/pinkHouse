@@ -17,7 +17,7 @@ const { User } = require('../../db/models')
 
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
-
+let options = {}
 if (process.env.NODE_ENV === 'production') {
 	options.schema = process.env.SCHEMA;
 }
