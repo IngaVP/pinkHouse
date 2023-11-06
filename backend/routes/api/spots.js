@@ -153,7 +153,7 @@ async (req,res) =>{
 
   for(let element of aggregateSpots){
 
-    const reviewCheck = await Review.findOne({ where:{userId: user.id}})
+    const reviewCheck = await Review.findOne({ where:{userId: user.id}}, {group: "Spot.id"})
 
     let aggregatePreview = await SpotImage.findOne({
       where: {spotId: element.id, preview:true},
