@@ -166,7 +166,7 @@ if(aggregatePreview && reviewCheck){
   const original = await Spot.findOne(
     {where:{id: element.id}, 
 
-    include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
+    include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}, {group: "Spot:id"}], 
     attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",
     [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"]]
   });
