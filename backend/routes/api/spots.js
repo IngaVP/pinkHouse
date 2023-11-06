@@ -140,20 +140,143 @@ async (req,res) =>{
  const { user } = req
 
 
-  const Spots = await Spot.findAll(
-    {where:{
-      ownerId: user.id
+  // const Spots = await Spot.findAll(
+  //   {where:{
+  //     ownerId: user.id
 
-  }});
-// const id = req.user.id
-// //const id = req.user.id;
-//     console.log("Current User ID:", id);
-//     //find spots where ownerId = current user, also include associated model review and spotimage.
-//     const spots = await Spot.findAll({
-//         include: [{model: Review}, {model:SpotImage}],
-//         where: { ownerId: id}
-//     })
+  // }});
 
+  
+  let Spots = []
+
+  const aggregateSpots = await Spot.findAll({where: {ownerId: user.id}})
+
+  for(let element of aggregateSpots){
+
+    const reviewCheck = await Review.findOne({ where:{userId: user.id}})
+
+    let aggregatePreview = await SpotImage.findOne({
+      where: {spotId: element.id, preview:true},
+      raw: true,
+     })
+
+console.log(element)
+if(aggregatePreview && reviewCheck){
+  
+  const original = await Spot.findOne(
+    {where:{id: element.id}, 
+
+    include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
+    attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",
+    [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"]]
+  });
+
+    let spotObject = {
+      id: original.id,
+      ownerId: original.ownerId,
+      address: original.address,
+      city: original.city,
+      state: original.state,
+      country: original.country,
+      lat: original.lat,
+      lng: original.lng,
+      name: original.name,
+      description: original.description,
+      price: original.price,
+      createdAt: original.createdAt,
+      updatedAt: original.updatedAt,
+      avgRating: original.avgRating,
+      previewImage: aggregatePreview.url
+    }
+    Spots.push(spotObject)
+  } else if (!aggregatePreview && reviewCheck){
+    
+    const original = await Spot.findByPk( element.id, {
+  //    {where:{id: element.id}, 
+
+      include: [{model:Review, attributes: []}], 
+      attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",
+      [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"]]
+    });
+
+    console.log(original)
+    let spotObject = {
+      id: original.id,
+      ownerId: original.ownerId,
+      address: original.address,
+      city: original.city,
+      state: original.state,
+      country: original.country,
+      lat: original.lat,
+      lng: original.lng,
+      name: original.name,
+      description: original.description,
+      price: original.price,
+      createdAt: original.createdAt,
+      updatedAt: original.updatedAt,
+      avgRating: original.avgRating,
+      previewImage: null
+    }
+    Spots.push(spotObject)
+  } else if (aggregatePreview && !reviewCheck){
+    
+    const original = await Spot.findOne(
+      {where:{id: element.id}, 
+
+      include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
+      attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt"]
+    });
+  let spotObject = {
+    id: original.id,
+    ownerId: original.ownerId,
+    address: original.address,
+    city: original.city,
+    state: original.state,
+    country: original.country,
+    lat: original.lat,
+    lng: original.lng,
+    name: original.name,
+    description: original.description,
+    price: original.price,
+    createdAt: original.createdAt,
+    updatedAt: original.updatedAt,
+    avgRating: null,
+    previewImage: aggregatePreview.url
+  }
+  Spots.push(spotObject)
+  } else if (!aggregatePreview && !reviewCheck){
+
+    
+    const original = await Spot.findOne(
+      {where:{id: element.id}, 
+
+      // include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
+      // attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",]
+    });
+
+    console.log(element.id)
+    let spotObject = {
+      id: element.id,
+      ownerId: original.ownerId,
+      address: original.address,
+      city: original.city,
+      state: original.state,
+      country: original.country,
+      lat: original.lat,
+      lng: original.lng,
+      name: original.name,
+      description: original.description,
+      price: original.price,
+      createdAt: original.createdAt,
+      updatedAt: original.updatedAt,
+      avgRating: null,
+      previewImage: null
+    }
+    Spots.push(spotObject)
+  }
+}
+
+return res.json(Spots)
   return(res.json({Spots}))
 
 }
@@ -326,7 +449,7 @@ async (req,res) =>{
 })
 
 
-router.get("/:spotId", 
+router.get("/:spotId" ,requireAuth, 
 async (req, res) =>{
    const { spotId } = req.params
 
@@ -431,7 +554,7 @@ async (req,res) =>{
 }
 )
 //get all spots
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
 
   let Spots = []
 
@@ -563,53 +686,6 @@ if(aggregatePreview && reviewCheck){
 }
 
 return res.json(Spots)
-//   let aggregateRating = await 
-//   Spot.findAll({
-//     include: {model:Review},
-//     attributes: [[
-//       sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating",
-//     ]], raw: true,
-//     // group: 'reviews.spotid'
-//   })
-
-
-
-//  console.log(aggregatePreview)
-// //   const Spots = await Spot.findAll({ attributes: [
-// // "ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt","avgRating","previewImg"
-// //   ] 
-// //   })
-
-//   let avgRating = ""
-//   for(let element of aggregateRating){
-//     avgRating = element.avgRating
-//   }
-
-
-//   let preview = ""
-//   for(let element of aggregatePreview){
-//     preview = element.previewImage
-//   }
-
-//   const completeSpots = Spots.map(original => ({
-    // id: original.id,
-    // ownerId: original.ownerId,
-    // address: original.address,
-    // city: original.city,
-    // state: original.state,
-    // country: original.country,
-    // lat: original.lat,
-    // lng: original.lng,
-    // name: original.name,
-    // description: original.description,
-    // price: original.price,
-    // createdAt: original.createdAt,
-    // updatedAt: original.updatedAt,
-    // avgRating: avgRating,
-    // previewImage: preview
-//   }));
-
-//   return res.json(completeSpots)
 })
 
 
