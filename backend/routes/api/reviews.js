@@ -22,17 +22,39 @@ const validateReviews = [
   ]
 
 //add an image to a review based on the Reviews Id
-router.post("/:reviewId/images", 
+router.post("/:reviewId/images",requireAuth, 
 async (req,res) =>{
     const { reviewId } = req.params
     const { url } = req.body
+    const { user } = req
+    
     const thisReview = await Review.findOne({
         where: {
             id: reviewId
         },
-        // attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: [{model: ReviewImage}],
     })
-
+    if(user.id !== thisReview.userId){
+        const newError = new Error("forbidden")
+        newError.status = 403
+         throw newError
+    }
+    
+    if(!thisReview){
+        res.status(404)
+        throw new Error("Review couldn't be found")
+    }
+    if(thisReview.ReviewImages.length > 10){
+        const newError = new Error("Maximum number of images for this resource was reached")
+        newError.status = 403
+         //res.status(403)
+         throw newError
+    }
+if(thisReview.userId !== user.id){  
+     const newError = new Error("forbidden")
+newError.status = 403
+ throw newError}
+    
     const newImage = await ReviewImage.create({ reviewId, url})
 
     const safeNewReviewImage = {
@@ -98,8 +120,9 @@ async (req,res)=>{
     }
 
     if(reviewToChange.userId !== user.id){
-        res.status(400)
-        throw new Error("Forbidden")
+        const newError = new Error("forbidden")
+        newError.status = 403
+         throw newError
     }
     reviewToChange.update({
         review: review,
