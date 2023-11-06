@@ -16,15 +16,24 @@ const { handleValidationErrors } = require('../../utils/validation');
 router.delete("/:imageId", requireAuth,
 async (req,res) =>{
     const { user } = req
+    const { imageId } = req.params
+    const parsedImgId = parseInt(imageId)
 
     //find spot that belongs to user
-    let spot = await Spot.findOne({where:{ownerId: user.id}}, {include:[{model:SpotImage}]})
-// return res.json(spot)
-    let spotId = spot.id
- //   find image on spot that belongs to user
-    let doomedImage = await SpotImage.findOne({where:{
-        spotId: spot.id
-    }})
+    let spot = await Spot.findOne({where:{ownerId: user.id}})
+
+  if(spot.ownerId !== user.id){
+    const newError = new Error("forbidden")
+  newError.status = 403
+   throw newError}
+
+    let doomedImage = await SpotImage.findOne({where: {id: imageId}})
+
+    if(!doomedImage){
+      const newError = new Error("Review Image couldn't be found")
+      newError.status = 404
+       throw newError
+    }
 
     await doomedImage.destroy()
 
