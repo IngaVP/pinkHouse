@@ -12,7 +12,7 @@ const cookieParser = require('cookie-parser');
 
 const { environment } = require('./config');
 const isProduction = environment === 'production';
-const routes = require('./routes');
+//const routes = require('./routes');
 const { ValidationError } = require('sequelize');
 //initialize application
 
