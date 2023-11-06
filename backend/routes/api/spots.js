@@ -228,29 +228,71 @@ async (req,res)=>{
     {where: {endDate:({[Op.between]: [start, end]})}})
 
     let checkForExistingBooking2 = await Booking.findOne(
-      {where: {endDate:({[Op.between]: [start, end]})}})
+      {where: {startDate:({[Op.between]: [start,end]})}})
+
 
 if(checkForExistingBooking){
-  console.log(checkForExistingBooking.endDate)
-  let existingEndDate = new Date (checkForExistingBooking.endDate)
+//start date falls on other start or end date
+  if(Date.parse(new Date(startDate)) === ((Date.parse(checkForExistingBooking2.startDate)) || Date.parse(new Date(endDate)) === Date.parse(checkForExistingBooking2.startDate))){
+    const newError = new Error("Sorry, this spot is already booked for the specified dates")
+    newError.status = 403
+    newError.errors = {
+      "startDate": "Start date conflicts with an existing booking"
+    }
+     throw newError
+  }
 
-  console.log("existingEndDate", parseInt(existingEndDate))
-  if(endDate == (checkForExistingBooking.endDate || checkForExistingBooking)){
+
+//end date falls on other start or end date 
+  if((Date.parse(new Date(endDate)) === (Date.parse(checkForExistingBooking.startDate) || Date.parse(checkForExistingBooking.endDate)))){
+  
     const newError = new Error("Sorry, this spot is already booked for the specified dates")
     newError.status = 403
     newError.errors = {
       "endDate": "End date conflicts with an existing booking"
     }
      throw newError
-  }
-  // if(startDate == (checkForExistingBooking2.endDate || checkForExistingBooking2.startDate)){
-  //   const newError = new Error("Sorry, this spot is already booked for the specified dates")
-  //   newError.status = 403
-  //   newError.errors = {
-  //     "startDate": "Start date conflicts with an existing booking"
-  //   }
-  //    throw newError
-  // }
+  } 
+
+  if (Date.parse(new Date(startDate)) < Date.parse(checkForExistingBooking.startDate) && Date.parse(checkForExistingBooking.endDate) < Date.parse(new Date(endDate))) {
+    const newError = new Error("Sorry, this spot is already booked for the specified dates")
+    newError.errors = {
+        startDate: "Start date conflicts with an existing booking",
+        endDate: "End date conflicts with an existing booking"
+                }
+      newError.status = 403
+      throw newError
+    }
+//dates in the past
+//console.log("now", Date.parse(Date.now()))
+if(Date.parse(new Date(startDate)) < Date.now() || Date.parse(new Date(endDate)) < Date.now()){
+  const newError = new Error("Date cannot be in the past")
+    newError.status = 403
+    throw newError
+}
+
+//within existing booking
+if((Date.parse(checkForExistingBooking.startDate) < Date.parse(new Date(startDate))) && (Date.parse(new Date(endDate)) > Date.parse(checkForExistingBooking.startDate))){
+  const newError = new Error("Sorry, this spot is already booked for the specified dates")
+  newError.errors = {
+      startDate: "Start date conflicts with an existing booking",
+     // endDate: "End date conflicts with an existing booking"
+              }
+    newError.status = 403
+    throw newError
+}
+
+
+if(Date.parse(checkForExistingBooking.startDate) < Date.parse(new Date(endDate)) && (Date.parse(new Date(endDate))) > Date.parse(checkForExistingBooking.startDate)){
+  const newError = new Error("Sorry, this spot is already booked for the specified dates")
+  newError.errors = {
+     // startDate: "Start date conflicts with an existing booking",
+      endDate: "End date conflicts with an existing booking"
+              }
+    newError.status = 403
+    throw newError
+}
+
 }
 
  let newBooking =  await Booking.create({
@@ -391,16 +433,183 @@ async (req,res) =>{
 //get all spots
 router.get("/", async (req, res) => {
 
-   //const Spots = await Spot.findAll()
+  let Spots = []
 
-const Spots = Spot.findAll({
-  attributes: {
-    include: [ {model:Review},
-      [sequelize.fn('AVG', sequelize.col('stars')), 'avgRating']
-    ]
+  const aggregateSpots = await Spot.findAll()
+
+  for(let element of aggregateSpots){
+
+    const reviewCheck = await Review.findOne({ where:{spotId: element.id}})
+
+    let aggregatePreview = await SpotImage.findOne({
+      where: {spotId: element.id, preview:true},
+      raw: true,
+     })
+
+console.log(element)
+if(aggregatePreview && reviewCheck){
+  
+  const original = await Spot.findOne(
+    {where:{id: element.id}, 
+
+    include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
+    attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",
+    [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"]]
+  });
+
+    let spotObject = {
+      id: original.id,
+      ownerId: original.ownerId,
+      address: original.address,
+      city: original.city,
+      state: original.state,
+      country: original.country,
+      lat: original.lat,
+      lng: original.lng,
+      name: original.name,
+      description: original.description,
+      price: original.price,
+      createdAt: original.createdAt,
+      updatedAt: original.updatedAt,
+      avgRating: original.avgRating,
+      previewImage: aggregatePreview.url
+    }
+    Spots.push(spotObject)
+  } else if (!aggregatePreview && reviewCheck){
+    
+    const original = await Spot.findByPk( element.id, {
+  //    {where:{id: element.id}, 
+
+      include: [{model:Review, attributes: []}], 
+      attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",
+      [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"]]
+    });
+
+    console.log(original)
+    let spotObject = {
+      id: original.id,
+      ownerId: original.ownerId,
+      address: original.address,
+      city: original.city,
+      state: original.state,
+      country: original.country,
+      lat: original.lat,
+      lng: original.lng,
+      name: original.name,
+      description: original.description,
+      price: original.price,
+      createdAt: original.createdAt,
+      updatedAt: original.updatedAt,
+      avgRating: original.avgRating,
+      previewImage: null
+    }
+    Spots.push(spotObject)
+  } else if (aggregatePreview && !reviewCheck){
+    
+    const original = await Spot.findOne(
+      {where:{id: element.id}, 
+
+      include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
+      attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt"]
+    });
+  let spotObject = {
+    id: original.id,
+    ownerId: original.ownerId,
+    address: original.address,
+    city: original.city,
+    state: original.state,
+    country: original.country,
+    lat: original.lat,
+    lng: original.lng,
+    name: original.name,
+    description: original.description,
+    price: original.price,
+    createdAt: original.createdAt,
+    updatedAt: original.updatedAt,
+    avgRating: null,
+    previewImage: aggregatePreview.url
   }
-})
-return res.json({Spots})
+  Spots.push(spotObject)
+  } else if (!aggregatePreview && !reviewCheck){
+
+    
+    const original = await Spot.findOne(
+      {where:{id: element.id}, 
+
+      // include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
+      // attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",]
+    });
+
+    console.log(element.id)
+    let spotObject = {
+      id: element.id,
+      ownerId: original.ownerId,
+      address: original.address,
+      city: original.city,
+      state: original.state,
+      country: original.country,
+      lat: original.lat,
+      lng: original.lng,
+      name: original.name,
+      description: original.description,
+      price: original.price,
+      createdAt: original.createdAt,
+      updatedAt: original.updatedAt,
+      avgRating: null,
+      previewImage: null
+    }
+    Spots.push(spotObject)
+  }
+}
+
+return res.json(Spots)
+//   let aggregateRating = await 
+//   Spot.findAll({
+//     include: {model:Review},
+//     attributes: [[
+//       sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating",
+//     ]], raw: true,
+//     // group: 'reviews.spotid'
+//   })
+
+
+
+//  console.log(aggregatePreview)
+// //   const Spots = await Spot.findAll({ attributes: [
+// // "ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt","avgRating","previewImg"
+// //   ] 
+// //   })
+
+//   let avgRating = ""
+//   for(let element of aggregateRating){
+//     avgRating = element.avgRating
+//   }
+
+
+//   let preview = ""
+//   for(let element of aggregatePreview){
+//     preview = element.previewImage
+//   }
+
+//   const completeSpots = Spots.map(original => ({
+    // id: original.id,
+    // ownerId: original.ownerId,
+    // address: original.address,
+    // city: original.city,
+    // state: original.state,
+    // country: original.country,
+    // lat: original.lat,
+    // lng: original.lng,
+    // name: original.name,
+    // description: original.description,
+    // price: original.price,
+    // createdAt: original.createdAt,
+    // updatedAt: original.updatedAt,
+    // avgRating: avgRating,
+    // previewImage: preview
+//   }));
+
+//   return res.json(completeSpots)
 })
 
 
