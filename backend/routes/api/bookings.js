@@ -45,6 +45,9 @@ async (req, res) =>{
 
     const parsedEnd = Date.parse(endDate)
     const parsedStart = Date.parse(startDate) 
+
+    let start = new Date(startDate)
+    let end = new Date(endDate)
   
      if(parsedEnd <= parsedStart){
       const newError = new Error("Bad Request")
@@ -53,29 +56,103 @@ async (req, res) =>{
       newError.errors = errorObject
         throw newError
      }
-
      let checkForExistingBooking = await Booking.findOne(
-        {where: {endDate: {[Op.between]: [endDate, startDate]}}})
+        {where: {endDate:({[Op.between]: [start, end]})}})
     
-      let checkForExistingBooking2 = await Booking.findOne(
-          {where: {endDate: {[Op.between]: [endDate, startDate]}}})
+        let checkForExistingBooking2 = await Booking.findOne(
+          {where: {startDate:({[Op.between]: [start,end]})}})
 
-    
-      if(startDate === (checkForExistingBooking.endDate || checkForExistingBooking.startDate)){
-        const newError = new Error("Sorry, this spot is already booked for the specified dates")
-        newError.status = 403
-        newError.errors = {
-          "endDate": "End date conflicts with an existing booking"
-        }
-         throw newError
-      }
+         // console.log("check", checkForExistingBooking)
+
+if (checkForExistingBooking || checkForExistingBooking2){
+//start date falls on other start or end date
+
+  if(Date.parse(new Date(startDate)) === ((Date.parse(checkForExistingBooking2.startDate)) || Date.parse(new Date(startDate)) === Date.parse(checkForExistingBooking2.endDate))){
+    const newError = new Error("Sorry, this spot is already booked for the specified dates")
+    newError.status = 403
+    newError.errors = {
+      "startDate": "Start date conflicts with an existing booking"
+    }
+     throw newError
+  }
+ // console.log("endDate", endDate)
+  //((Date.parse(new Date(endDate)) === (Date.parse(checkForExistingBooking.startDate)) ||
+//end date falls on other start or end date 
+if(checkForExistingBooking){
+  if(Date.parse(new Date(endDate)) === Date.parse(checkForExistingBooking.endDate) || Date.parse(new Date(endDate)) === Date.parse(checkForExistingBooking.startDate)){
+  
+    const newError = new Error("Sorry, this spot is already booked for the specified dates")
+    newError.status = 403
+    newError.errors = {
+      "endDate": "End date conflicts with an existing booking"
+    }
+     throw newError
+  } 
+}
+  //end point falls on other start or end day pt 2
+//   if(Date.parse(new Date(endDate)) === Date.parse(checkForExistingBooking2.endDate)){
+  
+//     const newError = new Error("Sorry, this spot is already booked for the specified dates")
+//     newError.status = 403
+//     newError.errors = {
+//       "endDate": "End date conflicts with an existing booking"
+//     }
+//      throw newError
+//   } 
+if(checkForExistingBooking2){
+  if (Date.parse(new Date(startDate)) < Date.parse(checkForExistingBooking2.startDate) && Date.parse(checkForExistingBooking2.endDate) < Date.parse(new Date(endDate))) {
+    const newError = new Error("Sorry, this spot is already booked for the specified dates")
+    newError.errors = {
+        startDate: "Start date conflicts with an existing booking",
+        endDate: "End date conflicts with an existing booking"
+                }
+      newError.status = 403
+      throw newError
+    }
+}
+//dates in the past
+if(Date.parse(new Date(startDate)) < Date.now() || Date.parse(new Date(endDate)) < Date.now()){
+  const newError = new Error("Date cannot be in the past")
+    newError.status = 403
+    throw newError
+}
+
+//within existing booking
+if((Date.parse(checkForExistingBooking.startDate) < Date.parse(new Date(startDate))) && (Date.parse(new Date(endDate)) > Date.parse(checkForExistingBooking.startDate))){
+  const newError = new Error("Sorry, this spot is already booked for the specified dates")
+  newError.errors = {
+      startDate: "Start date conflicts with an existing booking",
+     // endDate: "End date conflicts with an existing booking"
+              }
+    newError.status = 403
+    throw newError
+}
+
+
+if(Date.parse(checkForExistingBooking.startDate) < Date.parse(new Date(endDate)) && (Date.parse(new Date(endDate))) > Date.parse(checkForExistingBooking.startDate)){
+  const newError = new Error("Sorry, this spot is already booked for the specified dates")
+  newError.errors = {
+     // startDate: "Start date conflicts with an existing booking",
+      endDate: "End date conflicts with an existing booking"
+              }
+    newError.status = 403
+    throw newError
+}
+    }
 
     const bookingToBeEdited = await Booking.findByPk(bookingId)
+
+    if(!bookingToBeEdited){
+        const newError = new Error("Booking couldn't be found")
+        newError.status = 404
+         throw newError
+    }
     if(bookingToBeEdited.userId !== user.id){
         const newError = new Error("forbidden")
         newError.status = 403
          throw newError
     }
+
 
     bookingToBeEdited.update({
         startDate: startDate,
