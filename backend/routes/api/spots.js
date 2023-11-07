@@ -557,7 +557,7 @@ router.get("/", requireAuth, async (req, res) => {
 
   let Spots = []
 
-  const aggregateSpots = await Spot.findAll({group: Spot.id})
+  const aggregateSpots = await Spot.findAll({group: 'Spot.id'})
 
   for(let element of aggregateSpots){
 
