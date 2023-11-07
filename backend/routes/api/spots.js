@@ -355,7 +355,7 @@ async (req,res)=>{
 
 if(checkForExistingBooking){
 //start date falls on other start or end date
-  if(Date.parse(new Date(startDate)) === ((Date.parse(checkForExistingBooking2.startDate)) || Date.parse(new Date(endDate)) === Date.parse(checkForExistingBooking2.startDate))){
+  if(Date.parse(new Date(startDate)) === ((Date.parse(checkForExistingBooking.startDate)) || Date.parse(new Date(endDate)) === Date.parse(checkForExistingBooking.startDate))){
     const newError = new Error("Sorry, this spot is already booked for the specified dates")
     newError.status = 403
     newError.errors = {
