@@ -44,7 +44,7 @@ async (req,res) =>{
         res.status(404)
         throw new Error("Review couldn't be found")
     }
-    if(thisReview.ReviewImages.length > 10){
+    if(thisReview.ReviewImages.length > 9){
         const newError = new Error("Maximum number of images for this resource was reached")
         newError.status = 403
          //res.status(403)
