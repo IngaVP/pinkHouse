@@ -366,7 +366,7 @@ if(checkForExistingBooking){
 
 
 //end date falls on other start or end date 
-  if((Date.parse(new Date(endDate)) === (Date.parse(checkForExistingBooking.startDate) || Date.parse(checkForExistingBooking.endDate)))){
+  if((Date.parse(new Date(endDate)) === (Date.parse(checkForExistingBooking.startDate) || Date.parse(new Date(endDate)) === Date.parse(checkForExistingBooking.endDate)))){
   
     const newError = new Error("Sorry, this spot is already booked for the specified dates")
     newError.status = 403
