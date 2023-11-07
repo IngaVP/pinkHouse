@@ -153,7 +153,7 @@ async (req,res) =>{
 
   for(let element of aggregateSpots){
 
-    const reviewCheck = await Review.findOne({ where:{userId: user.id}}, {group: "Spot.id"})
+    const reviewCheck = await Review.findOne({ where:{userId: user.id}})
 
     let aggregatePreview = await SpotImage.findOne({
       where: {spotId: element.id, preview:true},
@@ -166,7 +166,7 @@ if(aggregatePreview && reviewCheck){
   const original = await Spot.findOne(
     {where:{id: element.id}, 
 
-    include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}, {group: "Spot:id"}], 
+    include: [{model:Review, attributes: []}, {model: SpotImage, where: {preview: true}, attributes: ["url"]}], 
     attributes: ["ownerId","address", "city","state","country","lat","lng","name","description","price","createdAt","updatedAt",
     [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"]]
   });
@@ -277,7 +277,6 @@ if(aggregatePreview && reviewCheck){
 }
 
 return res.json(Spots)
-  return(res.json({Spots}))
 
 }
 )
@@ -558,7 +557,7 @@ router.get("/", requireAuth, async (req, res) => {
 
   let Spots = []
 
-  const aggregateSpots = await Spot.findAll()
+  const aggregateSpots = await Spot.findAll({group: Spot.id})
 
   for(let element of aggregateSpots){
 
