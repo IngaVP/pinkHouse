@@ -393,16 +393,16 @@ if(Date.parse(new Date(startDate)) < Date.now() || Date.parse(new Date(endDate))
     throw newError
 }
 
-//within existing booking
-if((Date.parse(checkForExistingBooking.startDate) < Date.parse(new Date(startDate))) && (Date.parse(new Date(endDate)) > Date.parse(checkForExistingBooking.startDate))){
-  const newError = new Error("Sorry, this spot is already booked for the specified dates")
-  newError.errors = {
-      startDate: "Start date conflicts with an existing booking",
-     // endDate: "End date conflicts with an existing booking"
-              }
-    newError.status = 403
-    throw newError
-}
+// //within existing booking
+// if((Date.parse(checkForExistingBooking.startDate) < Date.parse(new Date(startDate))) && (Date.parse(new Date(endDate)) > Date.parse(checkForExistingBooking.startDate))){
+//   const newError = new Error("Sorry, this spot is already booked for the specified dates")
+//   newError.errors = {
+//       startDate: "Start date conflicts with an existing booking",
+//      // endDate: "End date conflicts with an existing booking"
+//               }
+//     newError.status = 403
+//     throw newError
+// }
 
 
 if(Date.parse(checkForExistingBooking.startDate) < Date.parse(new Date(endDate)) && (Date.parse(new Date(endDate))) > Date.parse(checkForExistingBooking.startDate)){
