@@ -599,7 +599,7 @@ if(aggregatePreview && reviewCheck){
     Spots.push(spotObject)
   } else if (!aggregatePreview && reviewCheck){
     
-    const original = await Spot.findByPk( element.id, {
+    const original = await Spot.findByPk(element.id, {group: 'Spot.id'}, {
   //    {where:{id: element.id}, 
 
       include: [{model:Review, attributes: []}], 
