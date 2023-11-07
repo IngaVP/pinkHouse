@@ -22,7 +22,7 @@ async (req,res) =>{
     //find spot that belongs to user
     let spot = await Spot.findOne({where:{ownerId: user.id}})
 
-  if(spot.ownerId !== user.id){
+  if(spot){
     const newError = new Error("forbidden")
   newError.status = 403
    throw newError}
