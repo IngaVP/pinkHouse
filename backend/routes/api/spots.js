@@ -138,15 +138,6 @@ router.get("/current", requireAuth,
 async (req,res) =>{
 
  const { user } = req
-
-
-  // const Spots = await Spot.findAll(
-  //   {where:{
-  //     ownerId: user.id
-
-  // }});
-
-  
   let Spots = []
 
   const aggregateSpots = await Spot.findAll({where: {ownerId: user.id}})

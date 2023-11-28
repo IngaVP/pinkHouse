@@ -54,17 +54,18 @@ router.post(
         }
       });
 
-      // if(credential === ""){
-      //   const error = new Error("Email or username is required")
-      //   error.status = 400;
-      //   return next(error)
-      // };
+      if(credential === ""){
+        const error = new Error("Email or username is required")
+        error.status = 400;
+        return next(error)
+      };
 
-      // if(password === ""){
-      //   const error = new Error("Password is required")
-      //   error.status = 400;
-      //   return next(error)
-      // };
+      if(password !== user.hashedPassword.toString()){
+        const error = new Error("Bad Request")
+        error.errors = {"password": "Password is required"}
+        error.status = 400;
+        return next(error)
+      };
       
       if (!user || !bcrypt.compareSync(password, user.hashedPassword.toString())) {
         const err = new Error('Login failed');
