@@ -30,7 +30,6 @@ async (req,res) =>{
     }, include : [{model: Spot}]});
 
     res.json(currentBookings)
-
 })
 
 
